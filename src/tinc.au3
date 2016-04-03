@@ -8,6 +8,10 @@
 
 #ce ----------------------------------------------------------------------------
 
+#include <MsgBoxConstants.au3>
+
+
+tincSearchInstallDir()
 Func tincSearchInstallDir()
 	; STUB
 EndFunc
