@@ -2,6 +2,9 @@
 ; TrayMenu by Boerek
 ; Erstellt mit ISN AutoIt Studio v. 1.00
 ;*****************************************
+#AutoIt3Wrapper_Res_File_Add=..\res\tinc-grey.ico,   RT_RCDATA, ICON_TRAY_STATUS_GREY, 0
+#AutoIt3Wrapper_Res_File_Add=..\res\tinc-green.ico,  RT_RCDATA, ICON_TRAY_STATUS_GREEN, 0
+#AutoIt3Wrapper_Res_File_Add=..\res\tinc-yellow.ico, RT_RCDATA, ICON_TRAY_STATUS_YELLOW, 0
 
 #include <Array.au3>; Only required to display the arrays
 #include <File.au3>
@@ -9,12 +12,20 @@
 #include <WinAPIFiles.au3>
 #include <TrayConstants.au3>; Required for the $TRAY_ICONSTATE_SHOW constant.
 
+#include '..\lib\ResourcesEx.au3' ; Requires compilation to exe to use _Resources_*() Functions
+
 Opt("TrayMenuMode", 3) ; The default tray menu items will not be shown and items are not checked when selected. These are options 1 and 2 for TrayMenuMode.
 
 Dim $aArray[1][1] ; 2D Array for VPN Name | Pointer Button Connect | Pointer Button Edit
 
 VPN2Tray()
 Traymenu()
+
+Func setTrayIcon()
+	Local $pathToIcon = @TempDir & '\tinc-gray-tmp.ico'
+	_Resource_SaveToFile($pathToIcon, 'ICON_TRAY_STATUS_GREY')
+	TraySetIcon($pathToIcon)
+EndFunc
 
 Func VPN2Tray()
 	Local $sAutoItDir =  "C:\Program Files (x86)\tinc\"
@@ -62,6 +73,8 @@ Func Traymenu()
 
 	TraySetState($TRAY_ICONSTATE_SHOW) ; Show the tray menu.
 
+    setTrayIcon()
+
 	While 1
 		$msg = TrayGetMsg()
 		Switch $msg
@@ -90,8 +103,6 @@ Func Traymenu()
 						$i = $i + 1
 					WEnd
 				EndIf
-
-
 		EndSwitch
 	WEnd
 EndFunc   ;==>Traymenu
