@@ -183,7 +183,7 @@ Func trayMenu()
 			$sTincStartValue = StderrRead($iTincStartPid)
 			If Not @error Then
 				If StringLen(StringStripCR(StringStripWS($sTincStartValue, $STR_STRIPALL))) > 0 Then
-					ConsoleWrite($sTincStartValue)
+					;ConsoleWrite($sTincStartValue)
 					_GUICtrlEdit_AppendText($hTincStartLog, $sTincStartValue)
 				EndIf
 			EndIf
@@ -194,6 +194,7 @@ EndFunc   ;==>Traymenu
 
 #Region Functions for tinc start / tinc status GUI
 Global $bIsTincStartGuiCreated = False ; Create once and hide/show on demand
+Global $hTincDisconnectButton
 Func guiTincStart($sNetworkName)
 	If Not $bIsTincStartGuiCreated Then
 		ConsoleWrite("Creating tinc start GUI" & @CRLF)
@@ -205,7 +206,8 @@ Func guiTincStart($sNetworkName)
 
 		Global $hTincStartGui = GUICreate("tinc '" & $sNetworkName & "'", $iWidth, $iHeight, @DesktopWidth/2 - $iWidth/2, @DesktopHeight/2 - $iHeight/2, $WS_CAPTION + $WS_MINIMIZEBOX + $WS_SYSMENU); + $WS_THICKFRAME)
 		$hTincStartLog = GUICtrlCreateEdit("", 5, 5, $iWidth - 10, $iHeight - 15 - $iButtonHeight, $ES_AUTOVSCROLL + $WS_VSCROLL)
-		Local $hTincDisconnectButton = GUICtrlCreateButton("Disconnect", $iWidth - 5 - $iButtonWidth, $iHeight - $iButtonHeight - 5, $iButtonWidth, $iButtonHeight)
+		GUICtrlSetFont($hTincStartLog, 8.5,0, 0, "Courier New")
+		$hTincDisconnectButton = GUICtrlCreateButton("Disconnect", $iWidth - 5 - $iButtonWidth, $iHeight - $iButtonHeight - 5, $iButtonWidth, $iButtonHeight)
 		GUICtrlSetOnEvent($hTincDisconnectButton, "tinc_stop")
 
 		$bIsTincStartGuiCreated = True
@@ -283,10 +285,13 @@ EndFunc   ;==>tinc_join
 Func tinc_start($networkName)
 	; Run in ComSpec
 	Local $sCommand = $gTincDirEscaped & 'tinc.exe -n ' & $networkName & ' start -D -d3'
-	ConsoleWrite($sCommand & @CRLF)
+	;ConsoleWrite($sCommand & @CRLF)
 	$iTincStartPid = Run('"' & @ComSpec & '" /c ' & $sCommand, "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
 	; Set Boolean used in main loop
 	$bTincStarted = True
+	GUICtrlSetState($hTincDisconnectButton, $GUI_ENABLE)
+
+	setTrayIcon($ICON_TRAY_GREEN)
 EndFunc   ;==>tinc_start
 
 Func tinc_stop()
@@ -300,6 +305,10 @@ Func tinc_stop()
 	                                        "| tinc stopped                  |" & @CRLF & _
 											"+-------------------------------|" & @CRLF)
 	TrayItemSetText($hTrayTincConnect, "Connect") ; Reset
+
+	GUICtrlSetState($hTincDisconnectButton, $GUI_DISABLE)
+
+	setTrayIcon($ICON_TRAY_GREY)
 EndFunc   ;==>tinc_stop
 #EndRegion
 
