@@ -1,7 +1,9 @@
-;*****************************************
-; TrayMenu by Boerek
-; Erstellt mit ISN AutoIt Studio v. 1.00
-;*****************************************
+#cs ----------------------------------------------------------------------------
+
+ AutoIt Version: 3.3.14.2
+ Author:         Boerek, tknapp
+
+#ce ----------------------------------------------------------------------------
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-grey-new.ico,   RT_RCDATA, ICON_TRAY_STATUS_GREY, 0
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-green-new.ico,  RT_RCDATA, ICON_TRAY_STATUS_GREEN, 0
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-yellow-new.ico, RT_RCDATA, ICON_TRAY_STATUS_YELLOW, 0
