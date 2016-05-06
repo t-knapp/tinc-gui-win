@@ -21,6 +21,8 @@
 #include <GuiEdit.au3>
 #include <Process.au3>
 
+#include "NetworkAdapter.au3" ; Functions for reading TAP devices information
+
 
 Opt("TrayMenuMode", 3) ; The default tray menu items will not be shown and items are not checked when selected. These are options 1 and 2 for TrayMenuMode.
 
@@ -107,20 +109,17 @@ Global $iTincStartPid
 Global $bTincStarted = False
 Global $bTincStartGui = False
 Global $hTincStartLog;
-Global $hTrayTincConnect;
+Global $hTrayTincConnect
+Global $sTincNetworkName ; Holds the name of the currently connected network
+
+Global $sTincTAPDeviceGUID = ""
+Global $iTincTAPDeviceIndex
 
 Func trayMenu()
-	Local $iSettings = TrayCreateMenu("Settings") ; Create a tray menu sub menu with two sub items.
-	Local $iDisplay = TrayCreateItem("Clear Networks", $iSettings)
-	Local $iPrinter = TrayCreateItem("Reload Networks", $iSettings)
-	TrayCreateItem("") ; Create a separator line.
+	TrayCreateItem("")
+    Local $idJoin = TrayCreateItem("Join new network")
 
-    Local $idJoin = TrayCreateItem("Join network")
-	TrayCreateItem("") ; Create a separator line.
-
-	Local $idAbout = TrayCreateItem("About")
-	TrayCreateItem("") ; Create a separator line.
-
+	TrayCreateItem("")
 	Local $idExit = TrayCreateItem("Exit")
 
 	TraySetState($TRAY_ICONSTATE_SHOW) ; Show the tray menu.
@@ -132,16 +131,6 @@ Func trayMenu()
 	While 1
 		$msg = TrayGetMsg()
 		Switch $msg
-			Case $idAbout ; Display a message box about the AutoIt version and installation path of the AutoIt executable.
-				MsgBox($MB_SYSTEMMODAL, "", "AutoIt tray menu example." & @CRLF & @CRLF & _
-						"Version: " & @AutoItVersion & @CRLF & _
-						"Install Path: " & StringLeft(@AutoItExe, StringInStr(@AutoItExe, "\", 0, -1) - 1)) ; Find the folder of a full path.
-
-			Case $iDisplay
-				trayClearNetworks()
-
-			Case $iPrinter
-				trayCreateNetworks()
 
 			Case $idJoin ; Show join window for entering an invitation code for a network.
 				;MsgBox($MB_SYSTEMMODAL, "Join", "Enter invitation URL")
@@ -161,17 +150,18 @@ Func trayMenu()
 						If $msg == $aArray[$i][2] Then
 							$bNotFound = False
 							;MsgBox(0, "Connect to: ", $aArray[$i][0])
-							guiTincStart($aArray[$i][0])
+							$sTincNetworkName = $aArray[$i][0]
+							guiTincStart($sTincNetworkName)
 							; Start tinc with selected network
 							If Not ProcessExists("tincd.exe") Then
-								tinc_start($aArray[$i][0])
+								tinc_start($sTincNetworkName)
 
 								$hTrayTincConnect = $aArray[$i][2]
 								TrayItemSetText($hTrayTincConnect, "Status")
 							EndIf
 						ElseIf $msg == $aArray[$i][3] Then
 							$bNotFound = False
-							MsgBox(0, "Edit: ", $aArray[$i][0])
+							MsgBox(0, "Edit: ", $sTincNetworkName)
 						EndIf
 						$i = $i + 1
 					WEnd
@@ -183,8 +173,20 @@ Func trayMenu()
 			$sTincStartValue = StderrRead($iTincStartPid)
 			If Not @error Then
 				If StringLen(StringStripCR(StringStripWS($sTincStartValue, $STR_STRIPALL))) > 0 Then
-					;ConsoleWrite($sTincStartValue)
 					_GUICtrlEdit_AppendText($hTincStartLog, $sTincStartValue)
+
+					; Find GUID of TAP Device to read details
+					If $sTincTAPDeviceGUID == "" Then
+						Local $iIndexStart = StringInStr($sTincStartValue, '{')
+						Local $iIndexEnd   = StringInStr($sTincStartValue, '}')
+						If $iIndexStart <> 0 And $iIndexEnd <> 0 Then
+							$sTincTAPDeviceGUID = StringMid($sTincStartValue, $iIndexStart, $iIndexEnd - $iIndexStart + 1)
+							$iTincTAPDeviceIndex = adaptersGetIndexForGUID($sTincTAPDeviceGUID)
+
+							TrayTip("Connected to " & $sTincNetworkName, "Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex), 0, $TIP_ICONASTERISK + $TIP_NOSOUND)
+							TraySetToolTip("Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex))
+						EndIf
+					EndIf
 				EndIf
 			EndIf
 		EndIf
@@ -204,7 +206,7 @@ Func guiTincStart($sNetworkName)
 		Local $iButtonWidth = 125
 		Local $iButtonHeight = 24
 
-		Global $hTincStartGui = GUICreate("tinc '" & $sNetworkName & "'", $iWidth, $iHeight, @DesktopWidth/2 - $iWidth/2, @DesktopHeight/2 - $iHeight/2, $WS_CAPTION + $WS_MINIMIZEBOX + $WS_SYSMENU); + $WS_THICKFRAME)
+		Global $hTincStartGui = GUICreate("Tinc Status '" & $sNetworkName & "'", $iWidth, $iHeight, @DesktopWidth/2 - $iWidth/2, @DesktopHeight/2 - $iHeight/2, $WS_CAPTION + $WS_MINIMIZEBOX + $WS_SYSMENU); + $WS_THICKFRAME)
 		$hTincStartLog = GUICtrlCreateEdit("", 5, 5, $iWidth - 10, $iHeight - 15 - $iButtonHeight, $ES_AUTOVSCROLL + $WS_VSCROLL)
 		GUICtrlSetFont($hTincStartLog, 8.5,0, 0, "Courier New")
 		$hTincDisconnectButton = GUICtrlCreateButton("Disconnect", $iWidth - 5 - $iButtonWidth, $iHeight - $iButtonHeight - 5, $iButtonWidth, $iButtonHeight)
@@ -237,7 +239,7 @@ Func joinNetworkGUI()
 	If $gIsTincJoinGuiCreated == False Then
 		$guiWidth = 600
 		$guiHeight = 400
-		Global $guiNetwork = GUICreate("tinc", $guiWidth, $guiHeight, @DesktopWidth/2 - $guiWidth/2, @DesktopHeight/2 - $guiHeight/2)
+		Global $guiNetwork = GUICreate("Tinc Join Network", $guiWidth, $guiHeight, @DesktopWidth/2 - $guiWidth/2, @DesktopHeight/2 - $guiHeight/2)
 		GUICtrlCreateLabel("Enter the invitation code generated by the tinc server.", 5, 5)
 		GUICtrlCreateLabel("Invitation code:", 5, 30)
 
@@ -307,6 +309,9 @@ Func tinc_stop()
 	TrayItemSetText($hTrayTincConnect, "Connect") ; Reset
 
 	GUICtrlSetState($hTincDisconnectButton, $GUI_DISABLE)
+
+	$sTincTAPDeviceGUID = "" ; Reset
+	TraySetToolTip()
 
 	setTrayIcon($ICON_TRAY_GREY)
 EndFunc   ;==>tinc_stop
