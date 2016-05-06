@@ -1,15 +1,19 @@
-#cs ----------------------------------------------------------------------------
-
- AutoIt Version: 3.3.14.2
- Author:         Boerek, tknapp
-
-#ce ----------------------------------------------------------------------------
+#RequireAdmin
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Icon=..\res\tinc-green-new.ico
+#AutoIt3Wrapper_Outfile=..\tinc-gui.exe
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-grey-new.ico,   RT_RCDATA, ICON_TRAY_STATUS_GREY, 0
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-green-new.ico,  RT_RCDATA, ICON_TRAY_STATUS_GREEN, 0
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-yellow-new.ico, RT_RCDATA, ICON_TRAY_STATUS_YELLOW, 0
 #AutoIt3Wrapper_Res_File_Add=..\res\tinc-red-new.ico,    RT_RCDATA, ICON_TRAY_STATUS_RED, 0
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#cs ----------------------------------------------------------------------------
 
-#RequireAdmin
+ AutoIt Version: 3.3.14.2
+ Author:         Boerek, t-knapp
+
+#ce ----------------------------------------------------------------------------
+
 
 #include <Array.au3>; Only required to display the arrays
 #include <File.au3>
@@ -29,7 +33,7 @@
 #include "Tray.au3"
 #include "GUI.au3"
 
-Opt("TrayMenuMode", 3) ; The default tray menu items will not be shown and items are not checked when selected. These are options 1 and 2 for TrayMenuMode.
+Opt("TrayMenuMode", 3)   ; The default tray menu items will not be shown and items are not checked when selected. These are options 1 and 2 for TrayMenuMode.
 Opt("GUIOnEventMode", 1) ; Change to OnEvent mode
 
 Func main()
@@ -57,20 +61,19 @@ Func main()
 				ExitLoop
 
 			Case Else
+				; Lookup the pressed tray menu item
 				If $msg <> 0 Then
 					Local $bNotFound = True
 					Local $i = 0
 					While $i < UBound($aArray) And $bNotFound
+						$sTincNetworkName = $aArray[$i][0] ; Global set selected network name
 						If $msg == $aArray[$i][2] Then
 							$bNotFound = False
-							$sTincNetworkName = $aArray[$i][0]
-							guiTincStart($sTincNetworkName)
-							; Start tinc with selected network
+							guiTincStart($sTincNetworkName) ; Show GUI
 							If Not ProcessExists("tincd.exe") Then
-								tinc_start($sTincNetworkName)
-
+								tinc_start($sTincNetworkName) ; Start tinc with selected network
 								$hTrayTincConnect = $aArray[$i][2]
-								TrayItemSetText($hTrayTincConnect, "Status")
+								TrayItemSetText($hTrayTincConnect, "Status") ; Change from "Connect" to "Status"
 							EndIf
 						ElseIf $msg == $aArray[$i][3] Then
 							$bNotFound = False
@@ -98,6 +101,7 @@ Func main()
 
 							TrayTip("Connected to " & $sTincNetworkName, "Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex), 0, $TIP_ICONASTERISK + $TIP_NOSOUND)
 							TraySetToolTip("Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex))
+							setTrayIcon($ICON_TRAY_GREEN)
 						EndIf
 					EndIf
 				EndIf

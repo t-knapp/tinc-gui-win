@@ -41,27 +41,25 @@ Func tinc_start($networkName)
 	$bTincStarted = True
 	GUICtrlSetState($hTincDisconnectButton, $GUI_ENABLE)
 
-	setTrayIcon($ICON_TRAY_GREEN)
+	setTrayIcon($ICON_TRAY_YELLOW)
 EndFunc   ;==>tinc_start
 
 Func tinc_stop()
-	;ConsoleWrite('@@ Debug(' & @ScriptLineNumber & ') : $iTincStartPid = ' & $iTincStartPid & @CRLF & '>Error code: ' & @error & @CRLF) ;### Debug Console
 	Local $iTincdPid = ProcessExists("tincd.exe")
-	;ConsoleWrite('@@ Debug(' & @ScriptLineNumber & ') : $iTincdPid = ' & $iTincdPid & @CRLF & '>Error code: ' & @error & @CRLF) ;### Debug Console
 	ProcessClose($iTincStartPid)
 	ProcessClose($iTincdPid)
 
 	_GUICtrlEdit_AppendText($hTincStartLog, "+-------------------------------+" & @CRLF & _
 	                                        "| tinc stopped                  |" & @CRLF & _
 											"+-------------------------------|" & @CRLF)
-	TrayItemSetText($hTrayTincConnect, "Connect") ; Reset
 
-	GUICtrlSetState($hTincDisconnectButton, $GUI_DISABLE)
+	GUICtrlSetState($hTincDisconnectButton, $GUI_DISABLE) ; Disable "Disconnect" button in GUI
+	TrayItemSetText($hTrayTincConnect, "Connect")         ; Reset
 
-	$sTincTAPDeviceGUID = "" ; Reset
-	TraySetToolTip()
-
-	setTrayIcon($ICON_TRAY_GREY)
+	$bTincStarted = False        ; Reset
+	$sTincTAPDeviceGUID = ""     ; Reset
+	TraySetToolTip()             ; Reset tray tool tip
+	setTrayIcon($ICON_TRAY_GREY) ; Reset tray icon to grey
 EndFunc   ;==>tinc_stop
 
 Func _GetDOSOutput($sCommand)
