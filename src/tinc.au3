@@ -60,6 +60,7 @@ Func tinc_stop()
 	$sTincTAPDeviceGUID = ""     ; Reset
 	TraySetToolTip()             ; Reset tray tool tip
 	setTrayIcon($ICON_TRAY_GREY) ; Reset tray icon to grey
+	$bValidIPAddress = False     ; Reset
 EndFunc   ;==>tinc_stop
 
 Func _GetDOSOutput($sCommand)
@@ -91,6 +92,59 @@ Func tincGetTincPaths()
 	; Debug
 	ConsoleWrite("$gTincDir       : " & $gTincDir & @CRLF)
 	ConsoleWrite("$gTincDirEscaped: " & $gTincDirEscaped & @CRLF)
+EndFunc
+#EndRegion
+
+#Region Get Subnet of network depending on own host file
+Func tincGetNetworkSubnet($networkName)
+	Local $sOwnName = tincGetNetworkOwnHostName($networkName)
+	If $sOwnName <> "" Then
+		; Open $networkName/hosts/$sOwnName and search for "Subnet" line and return value.
+		Local $sOwnHostFileName = $gTincDir & $networkName & "\hosts\" & $sOwnName
+		If FileExists($sOwnHostFileName) Then
+			Local $hOwnHostFile = FileOpen($sOwnHostFileName)
+			If $hOwnHostFile <> -1 Then
+				Local $sLine
+				Local $iLine = 1
+				Do
+					$sLine = FileReadLine($hOwnHostFile, $iLine)
+					$iLine += 1
+				Until StringInStr($sLine, "Subnet") == 1 OR @error <> 0
+				If @error == 0 Then
+					Local $aStrings = StringSplit($sLine, "=", $STR_NOCOUNT)
+					$aStrings = StringSplit($aStrings[1], ".", $STR_NOCOUNT)
+					Local $sResult = ""
+					Local $iIndex = 0
+					While StringInStr($aStrings[$iIndex], "0") <> 1
+						$sResult &= $aStrings[$iIndex] & "."
+						$iIndex += 1
+					WEnd
+					Return StringStripWS($sResult, $STR_STRIPALL)
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+	Return ""
+EndFunc
+
+Func tincGetNetworkOwnHostName($networkName)
+	Local $sConfigFile = $gTincDir & $networkName & "\tinc.conf"
+	If FileExists($sConfigFile) Then
+		Local $hConfigFile = FileOpen($sConfigFile)
+		If $hConfigFile <> -1 Then
+			Local $sLine
+			Local $iLine = 1
+			Do
+				$sLine = FileReadLine($hConfigFile, $iLine)
+				$iLine += 1
+			Until StringInStr($sLine, "Name=") == 1 OR @error <> 0
+			If @error == 0 Then
+				Local $aStrings = StringSplit($sLine, "=", $STR_NOCOUNT)
+				Return $aStrings[1]
+			EndIf
+		EndIf
+	EndIf
+	return ""
 EndFunc
 #EndRegion
 

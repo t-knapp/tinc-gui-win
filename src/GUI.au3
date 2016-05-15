@@ -17,7 +17,7 @@ Global $hTincDisconnectButton
 Func guiTincStart($sNetworkName)
 	If Not $bIsTincStartGuiCreated Then
 		ConsoleWrite("Creating tinc start GUI" & @CRLF)
-		Local $iWidth = 600
+		Local $iWidth = 800
 		Local $iHeight = 400
 
 		Local $iButtonWidth = 125

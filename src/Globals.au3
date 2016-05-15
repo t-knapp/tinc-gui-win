@@ -27,7 +27,8 @@ Global $bTincStarted = False
 Global $bTincStartGui = False
 Global $hTincStartLog
 Global $hTrayTincConnect
-Global $sTincNetworkName ; Holds the name of the currently connected network
+Global $sTincNetworkName        ; Holds the name of the currently connected network
+Global $bValidIPAddress = False ; Determines if interface already got IP Address by DHCP
 
 ; NetworkAdapters related
 Global $sTincTAPDeviceGUID = "" ; GUID of Virtual TAP Device, used to look-up index

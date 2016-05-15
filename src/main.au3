@@ -17,6 +17,7 @@
 
 #include <Array.au3>; Only required to display the arrays
 #include <File.au3>
+#include <Date.au3>
 #include <MsgBoxConstants.au3>
 #include <WinAPIFiles.au3>
 #include <TrayConstants.au3>; Required for the $TRAY_ICONSTATE_SHOW constant.
@@ -78,6 +79,8 @@ Func main()
 						ElseIf $msg == $aArray[$i][3] Then
 							$bNotFound = False
 							MsgBox(0, "Edit: ", $sTincNetworkName)
+							;MsgBox(0, "tinc.conf", tincGetNetworkOwnHostName($sTincNetworkName))
+							MsgBox(0, "tinc.conf", tincGetNetworkSubnet($sTincNetworkName))
 						EndIf
 						$i = $i + 1
 					WEnd
@@ -89,7 +92,8 @@ Func main()
 			$sTincStartValue = StderrRead($iTincStartPid)
 			If Not @error Then
 				If StringLen(StringStripCR(StringStripWS($sTincStartValue, $STR_STRIPALL))) > 0 Then
-					_GUICtrlEdit_AppendText($hTincStartLog, $sTincStartValue)
+					; TODO: Split at EOL and foreach...
+					_GUICtrlEdit_AppendText($hTincStartLog, "[" & _Now() & "]: " & $sTincStartValue)
 
 					; Find GUID of TAP Device to read details
 					If $sTincTAPDeviceGUID == "" Then
@@ -98,12 +102,19 @@ Func main()
 						If $iIndexStart <> 0 And $iIndexEnd <> 0 Then
 							$sTincTAPDeviceGUID = StringMid($sTincStartValue, $iIndexStart, $iIndexEnd - $iIndexStart + 1)
 							$iTincTAPDeviceIndex = adaptersGetIndexForGUID($sTincTAPDeviceGUID)
-
-							TrayTip("Connected to " & $sTincNetworkName, "Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex), 0, $TIP_ICONASTERISK + $TIP_NOSOUND)
-							TraySetToolTip("Your IP-Address is " & adaptersGetIpAddress($iTincTAPDeviceIndex))
-							setTrayIcon($ICON_TRAY_GREEN)
 						EndIf
 					EndIf
+				EndIf
+			EndIf
+
+			; Workarround for setting TrayIcon corresponding to IP Address
+			If Not $bValidIPAddress Then
+				Local $sIP = adaptersGetIpAddress($iTincTAPDeviceIndex)
+				If StringInStr($sIP, tincGetNetworkSubnet($sTincNetworkName)) == 1 Then
+					TrayTip("Connected to " & $sTincNetworkName, "Your IP-Address is " & $sIP, 0, $TIP_ICONASTERISK + $TIP_NOSOUND)
+					TraySetToolTip("Your IP-Address is " & $sIP)
+					setTrayIcon($ICON_TRAY_GREEN)
+					$bValidIPAddress = True
 				EndIf
 			EndIf
 		EndIf
