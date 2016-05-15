@@ -93,7 +93,15 @@ Func main()
 			If Not @error Then
 				If StringLen(StringStripCR(StringStripWS($sTincStartValue, $STR_STRIPALL))) > 0 Then
 					; TODO: Split at EOL and foreach...
-					_GUICtrlEdit_AppendText($hTincStartLog, "[" & _Now() & "]: " & $sTincStartValue)
+					;_GUICtrlEdit_AppendText($hTincStartLog, "[" & _Now() & "]: " & $sTincStartValue)
+
+					Local $aLines = StringSplit($sTincStartValue, @CRLF)
+					For $i = 1 To $aLines[0] Step 1
+						Local $sValue = StringStripWS(StringStripCR($aLines[$i]), $STR_STRIPLEADING + $STR_STRIPTRAILING)
+						If $sValue <> "" Then
+							_GUICtrlEdit_AppendText($hTincStartLog, "[" & _Now() & "]: " & $sValue & @CRLF)
+						EndIf
+					Next
 
 					; Find GUID of TAP Device to read details
 					If $sTincTAPDeviceGUID == "" Then
